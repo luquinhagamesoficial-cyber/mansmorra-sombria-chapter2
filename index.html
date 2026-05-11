@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Masmorra Sombria — Capítulo 2: A Fuga</title>
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Special Elite',serif}
+#wrap{position:relative;width:100vw;height:100vh;overflow:hidden;background:#000;cursor:crosshair}
+#c{display:block;width:100%;height:100%;image-rendering:pixelated}
+#hud{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+#vign{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,0.82)100%)}
+#xhair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%)}
+#xhair:before,#xhair:after{content:'';position:absolute;background:rgba(180,220,100,0.85);border-radius:1px}
+#xhair:before{width:2px;height:20px;left:9px;top:0}
+#xhair:after{width:20px;height:2px;left:0;top:9px}
+#hp{position:absolute;bottom:22px;left:20px;display:flex;align-items:center;gap:10px}
+#hp-lbl{color:#88cc44;font-family:'Creepster',cursive;font-size:22px;text-shadow:0 0 10px #4a0}
+#hp-bar{width:140px;height:12px;background:#0a1a00;border:1px solid #2a5000;border-radius:2px;overflow:hidden}
+#hp-fill{height:100%;background:linear-gradient(90deg,#1a6000,#88cc00);width:100%;transition:width .2s}
+#ammo-hud{position:absolute;bottom:22px;right:20px;font-family:'Creepster',cursive;font-size:26px;color:#88cc44;text-shadow:0 0 10px #4a0}
+#kills-hud{position:absolute;top:14px;right:20px;font-family:'Creepster',cursive;font-size:22px;color:#88cc44;text-shadow:0 0 10px #4a0}
+#mmwrap{position:absolute;top:14px;left:14px;border:1px solid #2a5000;background:rgba(0,0,0,0.8);border-radius:2px}
+#blood-fx{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,transparent 20%,rgba(0,80,0,0.45)100%);opacity:0;transition:opacity .15s;pointer-events:none}
+#dmg-fx{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,transparent 20%,rgba(160,0,0,0.55)100%);opacity:0;transition:opacity .15s;pointer-events:none}
+#floatmsg{position:absolute;top:54%;left:50%;transform:translateX(-50%);font-family:'Creepster',cursive;font-size:26px;color:#88cc44;text-shadow:0 0 18px #4a0;opacity:0;transition:opacity .4s;white-space:nowrap;pointer-events:none;text-align:center}
+#obj-hud{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-family:'Creepster',cursive;font-size:15px;color:#558833;letter-spacing:3px;text-align:center;text-shadow:0 0 6px #2a5000}
+#obj-bar-wrap{position:absolute;top:38px;left:50%;transform:translateX(-50%);width:220px;height:6px;background:#0a1a00;border:1px solid #2a5000;border-radius:2px;overflow:hidden}
+#obj-bar{height:100%;background:#88cc00;width:0%;transition:width .4s;box-shadow:0 0 4px #4a0}
+#boss-hp-wrap{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:320px;display:none;flex-direction:column;align-items:center;gap:4px}
+#boss-hp-lbl{font-family:'Creepster',cursive;font-size:18px;color:#cc4400;text-shadow:0 0 12px #f00;letter-spacing:2px}
+#boss-hp-bar{width:320px;height:14px;background:#1a0000;border:2px solid #600;border-radius:2px;overflow:hidden}
+#boss-hp-fill{height:100%;background:linear-gradient(90deg,#800,#ff4400);width:100%;transition:width .1s;box-shadow:0 0 8px #f00}
+#phase-announce{position:absolute;top:28%;left:50%;transform:translate(-50%,-50%);font-family:'Creepster',cursive;font-size:46px;color:#88cc44;text-shadow:0 0 30px #4a0;opacity:0;transition:opacity .6s;white-space:nowrap;pointer-events:none;text-align:center}
+#scanline{position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;opacity:0.4}
+#reloadbar{position:absolute;bottom:50px;right:20px;width:0;height:3px;background:#88cc44;border-radius:1px;transition:width .05s;box-shadow:0 0 6px #4a0}
+#chapter-badge{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-family:'Creepster',cursive;font-size:13px;color:#224400;letter-spacing:4px}
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20}
+#startscr{background:linear-gradient(180deg,#000 0%,#030800 60%,#000 100%)}
+#startscr h2{font-family:'Creepster',cursive;font-size:20px;color:#2a5000;letter-spacing:8px;margin-bottom:4px;text-shadow:0 0 10px #1a3000}
+#startscr h1{font-family:'Creepster',cursive;font-size:70px;color:#88cc44;text-shadow:0 0 30px #4a0,0 0 70px #2a6000;animation:glw 2.5s infinite;margin-bottom:6px}
+#startscr .sub{color:#2a5000;letter-spacing:6px;font-size:12px;margin-bottom:22px}
+#startscr .story{color:#1a3a00;font-family:'Special Elite',serif;font-size:13px;line-height:2;text-align:center;max-width:460px;margin-bottom:28px;border-left:2px solid #1a3000;padding-left:18px}
+#startscr .story strong{color:#448822}
+.btn{font-family:'Creepster',cursive;font-size:26px;color:#88cc44;background:transparent;border:2px solid #2a5000;padding:12px 40px;cursor:pointer;letter-spacing:2px;text-shadow:0 0 10px #4a0;transition:all .3s}
+.btn:hover{background:#0a1a00;border-color:#88cc44;box-shadow:0 0 25px #2a5000}
+.controls{color:#1a3000;font-family:'Special Elite',serif;font-size:11px;margin-top:18px;text-align:center;line-height:2.2;letter-spacing:2px}
+#goscreen{background:rgba(0,0,0,0.95);display:none}
+#goscreen h2{font-family:'Creepster',cursive;font-size:80px;color:#cc2200;text-shadow:0 0 40px #f00;animation:glwred 1.5s infinite;margin-bottom:10px}
+.go-stats{color:#223300;font-family:'Special Elite',serif;margin-bottom:24px;font-size:14px;letter-spacing:2px;text-align:center;line-height:2}
+#winscreen{background:radial-gradient(ellipse at center,#020a00 0%,#000 100%);display:none}
+#winscreen h2{font-family:'Creepster',cursive;font-size:62px;color:#88cc44;text-shadow:0 0 30px #4a0,0 0 80px #2a6000;animation:glw 2s infinite;margin-bottom:10px}
+.win-msg{color:#2a5000;font-family:'Special Elite',serif;font-size:13px;line-height:2.1;text-align:center;max-width:420px;margin-bottom:22px;letter-spacing:1px}
+.win-msg strong{color:#88cc44}
+.win-stats{color:#1a3300;font-family:'Special Elite',serif;font-size:13px;margin-bottom:24px;text-align:center;line-height:1.9}
+#gun-cvs{position:absolute;bottom:0;left:50%;transform:translateX(-50%);pointer-events:none;display:block}
+@keyframes glw{0%,100%{text-shadow:0 0 30px #4a0,0 0 60px #2a6000}50%{text-shadow:0 0 60px #8f0,0 0 120px #4a0,0 0 5px #cfc}}
+@keyframes glwred{0%,100%{text-shadow:0 0 30px #f00,0 0 60px #900}50%{text-shadow:0 0 60px #f00,0 0 120px #f00,0 0 5px #fff}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <div id="vign"></div>
+    <div id="scanline"></div>
+    <div id="dmg-fx"></div>
+    <div id="blood-fx"></div>
+    <div id="xhair"></div>
+    <canvas id="mmwrap" width="96" height="96"></canvas>
+    <div id="hp"><span id="hp-lbl">♥</span><div id="hp-bar"><div id="hp-fill"></div></div></div>
+    <div id="ammo-hud">🔫 <span id="ammo-n">30</span></div>
+    <div id="kills-hud">☠ <span id="kills-n">0</span></div>
+    <div id="obj-hud">FASE 1 — ATRAVESSE A FLORESTA</div>
+    <div id="obj-bar-wrap"><div id="obj-bar"></div></div>
+    <div id="boss-hp-wrap">
+      <div id="boss-hp-lbl">☠ CAPITÃO DA GUARDA ☠</div>
+      <div id="boss-hp-bar"><div id="boss-hp-fill"></div></div>
+    </div>
+    <div id="floatmsg"></div>
+    <div id="phase-announce"></div>
+    <div id="reloadbar"></div>
+    <div id="chapter-badge">CAP. II — A FUGA</div>
+  </div>
+  <canvas id="gun-cvs" width="900" height="240"></canvas>
+
+  <!-- START -->
+  <div id="startscr" class="screen">
+    <h2>MASMORRA SOMBRIA</h2>
+    <h1>Capítulo II</h1>
+    <div class="sub">A FUGA</div>
+    <div class="story">
+      Você escapou das masmorras e destruiu o Guardião das Trevas.<br>
+      Mas a fortaleza ainda está de pé — e seus soldados<br>
+      te perseguem pela floresta amaldiçoada.<br><br>
+      Atravesse a floresta, <strong>destrua os canhões</strong> que bloqueiam<br>
+      o caminho e <strong>derrote o Capitão da Guarda</strong><br>
+      para finalmente alcançar a liberdade.
+    </div>
+    <button class="btn" id="sbtn">FUGIR DA FORTALEZA</button>
+    <div class="controls">
+      W / A / S / D — MOVER &nbsp;|&nbsp; MOUSE — GIRAR<br>
+      CLIQUE / ESPAÇO — ATIRAR &nbsp;|&nbsp; R — RECARREGAR
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="goscreen" class="screen">
+    <h2>CAPTURADO!</h2>
+    <div class="go-stats" id="go-stats">—</div>
+    <button class="btn" id="rbtn">TENTAR NOVAMENTE</button>
+  </div>
+
+  <!-- WIN -->
+  <div id="winscreen" class="screen">
+    <h2>LIBERDADE!</h2>
+    <div class="win-msg">
+      O Capitão da Guarda caiu. Os canhões estão destruídos.<br>
+      A floresta abre um caminho claro à frente.<br><br>
+      Você correu sem olhar para trás,<br>
+      deixando a fortaleza para trás para sempre.<br>
+      <strong>Você é livre.</strong>
+    </div>
+    <div class="win-stats" id="win-stats">—</div>
+    <button class="btn" id="wbtn">JOGAR NOVAMENTE</button>
+  </div>
+</div>
+
+<script>
+// ── CANVAS ──────────────────────────────────────────────────────
+const wrap=document.getElementById('wrap');
+const C=document.getElementById('c');
+const CTX=C.getContext('2d');
+const GC=document.getElementById('gun-cvs');
+const GX=GC.getContext('2d');
+const MM=document.getElementById('mmwrap');
+const MX=MM.getContext('2d');
+let W,H;
+function resize(){W=C.width=window.innerWidth;H=C.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+
+// ── AUDIO ────────────────────────────────────────────────────────
+let AC=null;
+function ac(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();return AC;}
+function tone(f,type,dur,vol=0.3,slide=0){
+  try{let a=ac(),o=a.createOscillator(),g=a.createGain();
+    o.type=type;o.frequency.value=f;
+    if(slide)o.frequency.exponentialRampToValueAtTime(f+slide,a.currentTime+dur);
+    g.gain.setValueAtTime(vol,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+dur);
+    o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+dur);
+  }catch(e){}}
+function noise(dur,vol,lpf=2000){
+  try{let a=ac(),buf=a.createBuffer(1,a.sampleRate*dur,a.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*.2));
+    let s=a.createBufferSource(),g=a.createGain(),f=a.createBiquadFilter();
+    f.type='lowpass';f.frequency.value=lpf;
+    s.buffer=buf;g.gain.value=vol;
+    s.connect(f);f.connect(g);g.connect(a.destination);s.start();
+  }catch(e){}}
+function playShot(){noise(.1,.55,2200);tone(90,'sawtooth',.07,.25);}
+function playReload(){tone(280,'square',.06,.12);setTimeout(()=>tone(520,'square',.05,.1),130);setTimeout(()=>tone(200,'square',.08,.15),260);}
+function playHit(){noise(.07,.35,1500);tone(70,'sawtooth',.12,.2);}
+function playStep(){noise(.04,.2,700);tone(110,'sine',.04,.06);}
+function playExplosion(){
+  try{let a=ac(),buf=a.createBuffer(1,a.sampleRate*.5,a.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*.25));
+    let s=a.createBufferSource(),g=a.createGain(),f=a.createBiquadFilter();
+    f.type='lowpass';f.frequency.value=500;g.gain.value=0.9;
+    s.buffer=buf;s.connect(f);f.connect(g);g.connect(a.destination);s.start();
+    tone(55,'sawtooth',.4,.5,-20);
+  }catch(e){}}
+function playBossRoar(){
+  for(let i=0;i<3;i++)setTimeout(()=>{tone(65,'sawtooth',.7,.4,-20);},i*350);
+}
+function playVictory(){[523,659,784,1047,1318].forEach((f,i)=>setTimeout(()=>{tone(f,'sine',.5,.3);tone(f/2,'sine',.5,.15);},i*180));}
+function playAmbientWind(){
+  if(!running)return;
+  try{let a=ac(),buf=a.createBuffer(1,a.sampleRate*2,a.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*.06*Math.sin(i/d.length*Math.PI);
+    let s=a.createBufferSource(),g=a.createGain(),f=a.createBiquadFilter();
+    f.type='bandpass';f.frequency.value=300+Math.random()*200;f.Q.value=0.5;
+    g.gain.value=0.4;s.buffer=buf;s.connect(f);f.connect(g);g.connect(a.destination);s.start();
+  }catch(e){}
+  setTimeout(playAmbientWind,3000+Math.random()*5000);}
+function playBirdScreech(){
+  try{let a=ac(),o=a.createOscillator(),g=a.createGain();
+    o.type='sine';o.frequency.setValueAtTime(1200,a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(600,a.currentTime+.3);
+    g.gain.setValueAtTime(.15,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.4);
+    o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+.4);
+  }catch(e){}}
+function playPhaseStinger(){[330,440,550,660].forEach((f,i)=>setTimeout(()=>tone(f,'square',.2,.18),i*110));}
+
+// ── OUTDOOR MAP (forest + ruins) ──────────────────────────────────
+// 0=open, 1=tree/wall, 2=ruin stone, 3=cannon (destructible)
+const MAP=[
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+  [1,0,1,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1],
+  [1,0,0,0,0,1,0,0,3,0,0,0,0,1,0,0,0,0,0,1],
+  [1,1,0,1,0,0,0,0,0,0,1,0,0,0,0,1,0,1,0,1],
+  [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1],
+  [1,0,1,0,1,0,0,0,0,1,0,0,0,0,1,0,0,1,0,1],
+  [1,0,0,0,0,0,0,3,0,0,0,1,0,0,0,0,0,0,0,1],
+  [1,1,0,1,0,1,0,0,0,0,0,0,0,1,0,0,1,0,0,1],
+  [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+  [1,0,1,0,0,1,0,0,0,0,1,0,0,0,0,0,0,1,0,1],
+  [1,0,0,0,0,0,0,0,0,3,0,0,1,0,0,0,0,0,0,1],
+  [1,1,0,1,0,0,1,0,0,0,0,0,0,0,1,0,0,1,0,1],
+  [1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+  [1,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+  [1,0,0,0,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
+const MW=MAP[0].length,MH=MAP.length;
+
+// Cannon positions extracted from map
+let cannons=[];
+function initCannons(){
+  cannons=[];
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){
+    if(MAP[y][x]===3)cannons.push({mx:x,my:y,x:x+.5,y:y+.5,alive:true,hp:2,phase:Math.random()*6.28});
+  }
+}
+
+// Enemy spawn points (soldiers in the forest)
+const GUARD_PTS=[
+  [3,2],[7,1],[12,2],[16,1],[5,5],[10,4],[14,5],[17,4],
+  [2,8],[8,7],[13,8],[15,7],[4,12],[9,11],[16,11],[6,14],[12,13]
+];
+// Boss spawn (far end of map, gate area)
+const BOSS_SPAWN_PT=[10,14];
+// Escape gate (north end, player must reach after killing boss)
+const GATE_POS={x:10.5,y:1.5};
+
+// Phase 0: kill 8 soldiers
+// Phase 1: destroy 3 cannons
+// Phase 2: kill boss
+// Phase 3: reach the gate (WIN)
+let P={},enemies=[],boss=null,keys={},running=false,gameOver=false,won=false;
+let pointerLocked=false;
+let recoil=0,shotCD=0,reloading=false,reloadTick=0;
+let t=0,footT=0,growlT=0,birdT=0;
+let phase=0;
+const PHASE0_KILLS=8;
+let imgData=null;
+let gateOpen=false;
+let skyTime=0; // for day/night sky shift
+
+// ── SPAWN ─────────────────────────────────────────────────────────
+function spawnGuards(){
+  enemies=[];
+  GUARD_PTS.forEach(([x,y])=>enemies.push({
+    x:x+.5,y:y+.5,ang:Math.random()*Math.PI*2,
+    hp:70,maxHp:70,state:'idle',alertT:0,dead:false,dieT:0,
+    phase:Math.random()*6.28,_wt:0,isBoss:false,type:'soldier'
+  }));
+}
+function spawnBoss(){
+  boss={x:BOSS_SPAWN_PT[0]+.5,y:BOSS_SPAWN_PT[1]+.5,ang:0,
+    hp:500,maxHp:500,state:'chase',alertT:999,dead:false,dieT:0,
+    phase:0,_wt:0,isBoss:true,type:'boss'};
+  document.getElementById('boss-hp-wrap').style.display='flex';
+  playBossRoar();
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+function init(){
+  P={x:1.5,y:14.5,ang:-Math.PI/2,hp:100,ammo:30,kills:0,startTime:Date.now()};
+  phase=0;boss=null;gateOpen=false;
+  spawnGuards();initCannons();
+  recoil=0;shotCD=0;reloading=false;reloadTick=0;t=0;
+  running=true;gameOver=false;won=false;
+  document.getElementById('hp-fill').style.width='100%';
+  document.getElementById('ammo-n').textContent='30';
+  document.getElementById('kills-n').textContent='0';
+  document.getElementById('boss-hp-wrap').style.display='none';
+  document.getElementById('goscreen').style.display='none';
+  document.getElementById('winscreen').style.display='none';
+  document.getElementById('startscr').style.display='none';
+  updateObjHUD();
+  ac();
+  setTimeout(playAmbientWind,1500);
+  setTimeout(()=>{floatMsg('Fuja pela floresta! Elimine os guardas!',3000);},800);
+  wrap.requestPointerLock&&wrap.requestPointerLock();
+}
+document.getElementById('sbtn').onclick=init;
+document.getElementById('rbtn').onclick=init;
+document.getElementById('wbtn').onclick=init;
+document.addEventListener('pointerlockchange',()=>{pointerLocked=document.pointerLockElement===wrap;});
+document.addEventListener('mousemove',e=>{if(running&&pointerLocked)P.ang+=e.movementX*0.003;});
+wrap.addEventListener('click',()=>{if(!running)return;if(!pointerLocked)wrap.requestPointerLock&&wrap.requestPointerLock();shoot();});
+document.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='Space'&&running){e.preventDefault();shoot();}
+  if(e.code==='KeyR'&&running&&!reloading&&P.ammo<30)beginReload();
+  if(e.code==='Escape'&&pointerLocked)document.exitPointerLock();
+});
+document.addEventListener('keyup',e=>keys[e.code]=false);
+let lastTX=0;
+wrap.addEventListener('touchstart',e=>{lastTX=e.touches[0].clientX;e.preventDefault();},{passive:false});
+wrap.addEventListener('touchmove',e=>{if(!running)return;P.ang+=(e.touches[0].clientX-lastTX)*0.005;lastTX=e.touches[0].clientX;e.preventDefault();},{passive:false});
+
+// ── OBJ HUD ───────────────────────────────────────────────────────
+function updateObjHUD(){
+  let lbl=document.getElementById('obj-hud');
+  let bar=document.getElementById('obj-bar');
+  if(phase===0){
+    let k=enemies.filter(e=>e.dead).length;
+    lbl.textContent=`FASE 1 — ELIMINE OS GUARDAS (${k}/${PHASE0_KILLS})`;
+    bar.style.width=Math.min(100,Math.floor(k/PHASE0_KILLS*100))+'%';
+  }else if(phase===1){
+    let d=cannons.filter(c=>!c.alive).length;
+    lbl.textContent=`FASE 2 — DESTRUA OS CANHÕES (${d}/${cannons.length})`;
+    bar.style.width=Math.floor(d/cannons.length*100)+'%';
+  }else if(phase===2){
+    lbl.textContent='FASE 3 — DERROTE O CAPITÃO DA GUARDA';
+    let pct=boss?Math.floor((1-boss.hp/boss.maxHp)*100):0;
+    bar.style.width=pct+'%';
+    document.getElementById('boss-hp-fill').style.width=Math.max(0,(boss?.hp/boss?.maxHp)*100||0)+'%';
+  }else if(phase===3){
+    lbl.textContent='FASE 4 — ALCANCE O PORTÃO DE SAÍDA!';
+    let dx=GATE_POS.x-P.x,dy=GATE_POS.y-P.y;
+    let dist=Math.hypot(dx,dy);
+    let pct=Math.max(0,Math.min(100,Math.floor((1-dist/15)*100)));
+    bar.style.width=pct+'%';
+  }
+}
+
+function checkPhase(){
+  if(phase===0){
+    if(enemies.filter(e=>e.dead).length>=PHASE0_KILLS)advancePhase(1);
+  }else if(phase===1){
+    if(cannons.filter(c=>!c.alive).length>=cannons.length)advancePhase(2);
+  }else if(phase===2){
+    if(boss&&boss.dead)advancePhase(3);
+  }else if(phase===3){
+    let dx=GATE_POS.x-P.x,dy=GATE_POS.y-P.y;
+    if(Math.hypot(dx,dy)<1.5)triggerWin();
+  }
+}
+function advancePhase(n){
+  phase=n;playPhaseStinger();
+  if(n===1){phaseAnnounce('FASE 2: DESTRUA OS CANHÕES!');floatMsg('Encontre e destrua os 3 canhões inimigos!',3500);}
+  if(n===2){spawnBoss();phaseAnnounce('FASE 3: O CAPITÃO APARECE!');floatMsg('O Capitão da Guarda bloqueia seu caminho!',3500);}
+  if(n===3){gateOpen=true;phaseAnnounce('FASE 4: ALCANCE O PORTÃO!');floatMsg('Corra para o portão de saída ao norte!',3500);}
+}
+function phaseAnnounce(txt){
+  let el=document.getElementById('phase-announce');
+  el.textContent=txt;el.style.opacity='1';
+  setTimeout(()=>el.style.opacity='0',2800);
+}
+
+// ── SHOOT ─────────────────────────────────────────────────────────
+function shoot(){
+  if(shotCD>0||reloading||P.hp<=0)return;
+  if(P.ammo<=0){floatMsg('SEM BALAS! [R] RECARREGAR');return;}
+  P.ammo--;document.getElementById('ammo-n').textContent=P.ammo;
+  recoil=1;shotCD=13;playShot();
+
+  // Try cannon first (phase 1)
+  if(phase===1){
+    let hc=shootCannonRay();
+    if(hc){
+      hc.hp--;
+      if(hc.hp<=0){hc.alive=false;MAP[hc.my][hc.mx]=0;playExplosion();floatMsg('CANHÃO DESTRUÍDO!',1500);}
+      else{floatMsg('Canhão danificado...',1000);}
+      checkPhase();return;
+    }
+  }
+  // Try boss (phase 2)
+  let targets=[...enemies];
+  if(boss&&!boss.dead)targets.push(boss);
+  let hit=shootRay(targets);
+  if(hit){
+    let dmg=hit.isBoss?40+Math.random()*20:60+Math.random()*25;
+    hit.hp-=dmg;flashHit();playHit();
+    if(hit.hp<=0&&!hit.dead){
+      hit.dead=true;hit.dieT=t;playExplosion();
+      if(!hit.isBoss){P.kills++;document.getElementById('kills-n').textContent=P.kills;}
+      checkPhase();
+    }
+  }
+}
+function shootRay(targets){
+  let ax=Math.cos(P.ang),ay=Math.sin(P.ang),best=null,bd=99;
+  for(let e of targets){
+    if(e.dead)continue;
+    let dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);
+    let dot=dx*ax+dy*ay;if(dot<.2)continue;
+    let cross=Math.abs(dx*ay-dy*ax);
+    let w=e.isBoss?.9:.55;
+    if(cross<w&&d<bd){bd=d;best=e;}
+  }
+  return best;
+}
+function shootCannonRay(){
+  let ax=Math.cos(P.ang),ay=Math.sin(P.ang);
+  for(let c of cannons){
+    if(!c.alive)continue;
+    let dx=c.x-P.x,dy=c.y-P.y,d=Math.hypot(dx,dy);
+    if(d>8)continue;
+    let dot=dx*ax+dy*ay;if(dot<.2)continue;
+    let cross=Math.abs(dx*ay-dy*ax);
+    if(cross<.5)return c;
+  }
+  return null;
+}
+function beginReload(){reloading=true;reloadTick=0;floatMsg('RECARREGANDO...',2000);playReload();}
+function flashHit(){
+  let b=document.getElementById('blood-fx');b.style.opacity='0.6';
+  clearTimeout(b._t);b._t=setTimeout(()=>b.style.opacity='0',180);
+}
+function flashDmg(){
+  let b=document.getElementById('dmg-fx');b.style.opacity='0.7';
+  clearTimeout(b._t);b._t=setTimeout(()=>b.style.opacity='0',200);
+}
+function floatMsg(s,dur=2200){
+  let m=document.getElementById('floatmsg');m.textContent=s;m.style.opacity='1';
+  clearTimeout(m._t);m._t=setTimeout(()=>m.style.opacity='0',dur);
+}
+
+// ── WALL / RAY ────────────────────────────────────────────────────
+function wallAt(x,y){
+  let mx=Math.floor(x),my=Math.floor(y);
+  if(mx<0||my<0||mx>=MW||my>=MH)return true;
+  let v=MAP[my][mx];return v===1||v===2||(v===3&&cannons.find(c=>c.mx===mx&&c.my===my&&c.alive));
+}
+function tileAt(x,y){
+  let mx=Math.floor(x),my=Math.floor(y);
+  if(mx<0||my<0||mx>=MW||my>=MH)return 1;
+  return MAP[my][mx];
+}
+function castRay(ang){
+  let rx=Math.cos(ang),ry=Math.sin(ang),step=.035,dist=0;
+  while(dist<22){
+    dist+=step;
+    let x=P.x+rx*dist,y=P.y+ry*dist;
+    if(wallAt(x,y)){
+      let side=Math.abs(x%1-.5)<Math.abs(y%1-.5)?0:1;
+      let tile=tileAt(x,y);
+      return{dist,side,wx:x,wy:y,tile};
+    }
+  }
+  return{dist:22,side:0,wx:P.x+rx*22,wy:P.y+ry*22,tile:0};
+}
+
+// ── OUTDOOR WALL COLORS ───────────────────────────────────────────
+// Trees are dark green/brown, ruins are grey-green, cannons are dark iron
+function wallRGB(dist,side,wx,wy,tile){
+  let fog=Math.max(0,1-dist/13); // longer view distance outdoors
+  let sdim=side?.75:1;
+  let n=Math.sin(wx*17+wy*13)*.5+.5;
+  let n2=Math.sin(wx*7+wy*23)*.5+.5;
+  let r,g,b;
+  if(tile===3){
+    // cannon — dark iron/rust
+    let rust=Math.sin(wx*41+wy*31)>.6?.4:1;
+    let v=fog*(40+20*n)*sdim;
+    r=Math.floor(v*.6*rust);g=Math.floor(v*.25);b=Math.floor(v*.15);
+  }else if(tile===2){
+    // ruin stone — mossy grey
+    let moss=Math.sin(wx*11+wy*7)>.4?.5:1;
+    let crack=Math.sin(wx*31+wy*19)>.7?.7:1;
+    let v=fog*(60+30*n)*sdim;
+    r=Math.floor(v*.45*crack);g=Math.floor(v*.55*moss);b=Math.floor(v*.3);
+  }else{
+    // tree — bark + leaves layers
+    let bark=Math.floor(wx*3)%2===Math.floor(wy*4)%2;
+    let v=fog*sdim;
+    if(bark){r=Math.floor((30+20*n)*v);g=Math.floor((40+15*n)*v);b=Math.floor((10+8*n)*v);}
+    else{r=Math.floor((15+10*n2)*v);g=Math.floor((55+25*n2)*v);b=Math.floor((10+5*n2)*v);}
+    // moss patches
+    if(Math.sin(wx*5.3+wy*3.1)>.6){r=Math.floor(r*.7);g=Math.min(255,Math.floor(g*1.3));}
+  }
+  return[r,g,b];
+}
+
+// ── SKY COLOR (gradient, shifts over time) ────────────────────────
+function skyRGB(ty, half, topT){
+  // dusk sky: dark blue → orange horizon
+  let skyFrac=1-ty/half; // 0 at horizon, 1 at top
+  let dusk=Math.sin(skyTime*.0004)*.5+.5; // 0=night, 1=dusk
+  // horizon
+  let hr=Math.floor(30+80*dusk*(1-skyFrac));
+  let hg=Math.floor(10+40*dusk*(1-skyFrac*.7));
+  let hb=Math.floor(15+20*(1-dusk)*(skyFrac));
+  // top sky
+  let tr=Math.floor(5+15*dusk*skyFrac);
+  let tg=Math.floor(5+8*dusk*skyFrac);
+  let tb=Math.floor(20+35*(1-dusk)*skyFrac);
+  let f=skyFrac;
+  return[Math.floor(hr*(1-f)+tr*f),Math.floor(hg*(1-f)+tg*f),Math.floor(hb*(1-f)+tb*f)];
+}
+
+// ── FLOOR COLOR (grass / dirt) ────────────────────────────────────
+function floorRGB(fx,fy,dist){
+  let fog=Math.max(0,1-dist/14);
+  let grass=Math.sin(fx*9.1+fy*7.3)>.2;
+  let patch=Math.sin(fx*3.7+fy*4.1)>.6?.6:1;
+  let rock=Math.sin(fx*21+fy*19)>.85?.4:1;
+  let r,g,b;
+  if(grass){r=Math.floor((15+10*Math.random()*.1)*fog*patch*rock);g=Math.floor((35+20*Math.random()*.1)*fog*patch);b=Math.floor(5*fog);}
+  else{r=Math.floor((40+15*Math.random()*.1)*fog*rock);g=Math.floor((30+8*Math.random()*.1)*fog);b=Math.floor(10*fog);}
+  return[r,g,b];
+}
+
+// ── RENDER SCENE ─────────────────────────────────────────────────
+function renderScene(){
+  if(!imgData||imgData.width!==W||imgData.height!==H)imgData=CTX.createImageData(W,H);
+  let dat=imgData.data;
+  let half=H/2,fov=Math.PI*.6;
+  let zbuf=new Float32Array(W);
+  skyTime=t;
+
+  for(let x=0;x<W;x++){
+    let a=P.ang+(x/W-.5)*fov;
+    let r=castRay(a);
+    zbuf[x]=r.dist;
+    let wh=Math.min(H,Math.floor(H/r.dist));
+    let top=Math.floor(half-wh/2),bot=Math.floor(half+wh/2);
+    let[wr,wg,wb]=wallRGB(r.dist,r.side,r.wx,r.wy,r.tile);
+
+    for(let y=0;y<H;y++){
+      let i=(y*W+x)*4;
+      if(y<top){
+        // SKY
+        let[sr,sg,sb]=skyRGB(top-y,half,top);
+        // stars
+        let star=Math.sin(x*127.3+y*311.7)>.97;
+        dat[i]=star?200:sr;dat[i+1]=star?200:sg;dat[i+2]=star?220:sb;dat[i+3]=255;
+      }else if(y>bot){
+        // GROUND
+        let fy2=(y-half)/wh;
+        let f=Math.max(0,.25+fy2*.6);
+        let rd=half/(y-half+.001);
+        let fx=P.x+Math.cos(a)*rd,ffy=P.y+Math.sin(a)*rd;
+        let[gr,gg,gb]=floorRGB(fx,ffy,rd);
+        dat[i]=gr;dat[i+1]=gg;dat[i+2]=gb;dat[i+3]=255;
+      }else{
+        dat[i]=wr;dat[i+1]=wg;dat[i+2]=wb;dat[i+3]=255;
+      }
+    }
+  }
+
+  // Draw enemies & boss
+  let sprites=[...enemies];
+  if(boss&&!boss.dead)sprites.push(boss);
+  sprites.sort((a,b)=>Math.hypot(b.x-P.x,b.y-P.y)-Math.hypot(a.x-P.x,a.y-P.y));
+  for(let e of sprites)drawSprite(e,dat,zbuf,half,fov);
+
+  // Draw gate marker (phase 3)
+  if(phase===3||gateOpen)drawGate(dat,zbuf,half,fov);
+
+  // Draw cannon markers (phase 1)
+  if(phase===1)for(let c of cannons)if(c.alive)drawCannonMarker(c,dat,zbuf,half,fov);
+
+  CTX.putImageData(imgData,0,0);
+
+  // Forest fog overlay (light green mist)
+  let mist=0.03+Math.sin(t*.006)*.015;
+  CTX.fillStyle=`rgba(0,20,0,${mist})`;CTX.fillRect(0,0,W,H);
+
+  // Occasional firefly flicker
+  if(Math.random()<.04){
+    let fx=Math.random()*W,fy=Math.random()*H*.7+H*.15;
+    CTX.fillStyle=`rgba(180,255,100,${Math.random()*.4})`;
+    CTX.beginPath();CTX.arc(fx,fy,1.5,0,Math.PI*2);CTX.fill();
+  }
+}
+
+function drawSprite(e,dat,zbuf,half,fov){
+  if(e.dead&&t-e.dieT>100)return;
+  let dx=e.x-P.x,dy=e.y-P.y,dist=Math.hypot(dx,dy);
+  if(dist<.25)return;
+  let ea=Math.atan2(dy,dx);
+  let da=ea-P.ang;
+  while(da>Math.PI)da-=Math.PI*2;while(da<-Math.PI)da+=Math.PI*2;
+  if(Math.abs(da)>fov*.65)return;
+  let sx=Math.floor((.5+da/fov)*W);
+  let sh=Math.min(H*.92,Math.floor(H*(e.isBoss?1.4:.72)/dist));
+  let sw=Math.floor(sh*(e.isBoss?.9:.6));
+  let topS=Math.floor(half-sh/2),leftS=Math.floor(sx-sw/2);
+  let wob=Math.sin(t*.12+e.phase)*2;
+  let dead=e.dead,age=dead?(t-e.dieT)/100:0;
+  let bright=Math.max(0,1-dist/10);
+
+  for(let cx=Math.max(0,leftS);cx<Math.min(W,leftS+sw);cx++){
+    if(zbuf[cx]<dist*.92)continue;
+    let tx=(cx-leftS)/sw;
+    for(let cy=Math.floor(topS);cy<Math.floor(topS+sh);cy++){
+      if(cy<0||cy>=H)continue;
+      let ty=(cy-topS)/sh;
+      let iy=Math.min(H-1,Math.max(0,Math.floor(cy+wob)));
+      let i=(iy*W+cx)*4;
+      if(i<0||i>=dat.length-3)continue;
+      let bod=ty>.04&&ty<.96&&tx>.04&&tx<.96;
+      if(!bod)continue;
+      let isHead=ty<.4;
+      let isHelmet=ty<.18;
+      let isEye=!dead&&ty>.18&&ty<.32&&((tx>.25&&tx<.4)||(tx>.6&&tx<.75));
+      let isArmor=!isHead&&ty<.7;
+      let isCape=!isHead&&(tx<.12||tx>.88);
+      let n=Math.sin(tx*19+ty*13+e.phase)*.5+.5;
+      let r2,g2,b2;
+      if(dead){r2=Math.floor(30*(1-age)*bright);g2=Math.floor(40*(1-age)*bright);b2=0;}
+      else if(isHelmet){
+        // metal helmet — grey-brown
+        r2=Math.floor((50+20*n)*bright);g2=Math.floor((45+15*n)*bright);b2=Math.floor(20*bright);
+      }else if(isEye){
+        r2=220;g2=180;b2=0; // yellow eyes for soldiers
+        if(e.isBoss){r2=255;g2=60;b2=0;}
+      }else if(isHead){
+        r2=Math.floor((45+15*n)*bright);g2=Math.floor((35+10*n)*bright);b2=Math.floor(20*bright);
+      }else if(isCape){
+        // dark red uniform cape
+        r2=Math.floor((e.isBoss?60:35+10*n)*bright);g2=Math.floor(8*bright);b2=0;
+      }else if(isArmor){
+        // armor — dark iron
+        let plate=Math.sin(tx*12+ty*8)>.2;
+        r2=Math.floor((plate?40:25)*n*bright);g2=Math.floor((plate?35:20)*n*bright);b2=Math.floor(15*bright);
+      }else{
+        r2=Math.floor((25+15*n)*bright);g2=Math.floor((20+10*n)*bright);b2=0;
+      }
+      dat[i]=r2;dat[i+1]=g2;dat[i+2]=b2;dat[i+3]=255;
+    }
+  }
+}
+
+function drawCannonMarker(c,dat,zbuf,half,fov){
+  let dx=c.x-P.x,dy=c.y-P.y,dist=Math.hypot(dx,dy);
+  if(dist>10||dist<.3)return;
+  let ea=Math.atan2(dy,dx),da=ea-P.ang;
+  while(da>Math.PI)da-=Math.PI*2;while(da<-Math.PI)da+=Math.PI*2;
+  if(Math.abs(da)>fov*.6)return;
+  let sx=Math.floor((.5+da/fov)*W);
+  let sh=Math.min(90,Math.floor(60/dist));
+  let sw=Math.floor(sh*1.4);
+  let topS=Math.floor(half+sh*.1),leftS=Math.floor(sx-sw/2);
+  let glow=Math.sin(t*.1+c.phase)*.5+.5;
+  for(let cx=Math.max(0,leftS);cx<Math.min(W,leftS+sw);cx++){
+    if(zbuf[cx]<dist*.88)continue;
+    let tx=(cx-leftS)/sw;
+    for(let cy=Math.floor(topS);cy<Math.floor(topS+sh);cy++){
+      if(cy<0||cy>=H)continue;
+      let ty=(cy-topS)/sh;
+      // cannon barrel shape
+      let barrel=ty>.2&&ty<.8&&tx>.1&&tx<.9;
+      let wheel1=Math.hypot(tx-.2,ty-.85)<.25;
+      let wheel2=Math.hypot(tx-.8,ty-.85)<.25;
+      if(!barrel&&!wheel1&&!wheel2)continue;
+      let i=(cy*W+cx)*4;
+      if(i<0||i>=dat.length-3)continue;
+      let bright=Math.max(0,1-dist/8);
+      if(barrel){dat[i]=Math.floor(60*bright);dat[i+1]=Math.floor(40*bright);dat[i+2]=Math.floor(20*bright);}
+      else{dat[i]=Math.floor(40*bright);dat[i+1]=Math.floor(35*bright);dat[i+2]=Math.floor(15*bright);}
+      dat[i+3]=255;
+      // orange glow on damaged
+      if(c.hp<2){dat[i]=Math.floor(200*bright*glow);dat[i+1]=Math.floor(80*bright*glow);dat[i+2]=0;}
+    }
+  }
+}
+
+function drawGate(dat,zbuf,half,fov){
+  let dx=GATE_POS.x-P.x,dy=GATE_POS.y-P.y,dist=Math.hypot(dx,dy);
+  if(dist>16||dist<.5)return;
+  let ea=Math.atan2(dy,dx),da=ea-P.ang;
+  while(da>Math.PI)da-=Math.PI*2;while(da<-Math.PI)da+=Math.PI*2;
+  if(Math.abs(da)>fov*.65)return;
+  let sx=Math.floor((.5+da/fov)*W);
+  let sh=Math.min(H*.5,Math.floor(H*.4/dist));
+  let sw=Math.floor(sh*.7);
+  let topS=Math.floor(half-sh/2),leftS=Math.floor(sx-sw/2);
+  let glow=Math.sin(t*.07)*.4+.6;
+  for(let cx=Math.max(0,leftS);cx<Math.min(W,leftS+sw);cx++){
+    if(zbuf[cx]<dist*.85)continue;
+    let tx=(cx-leftS)/sw;
+    for(let cy=Math.floor(topS);cy<Math.floor(topS+sh);cy++){
+      if(cy<0||cy>=H)continue;
+      let ty=(cy-topS)/sh;
+      let arch=Math.hypot(tx-.5,(ty-.6)*.7)<.45;
+      let frame=(tx<.12||tx>.88||ty<.08)&&ty<.95;
+      if(!arch&&!frame)continue;
+      let i=(cy*W+cx)*4;
+      if(i<0||i>=dat.length-3)continue;
+      let bright=Math.max(0,1-dist/14);
+      if(arch){
+        // glowing light beyond gate
+        dat[i]=Math.floor(200*bright*glow);dat[i+1]=Math.floor(180*bright*glow);dat[i+2]=Math.floor(80*bright*glow);
+      }else{
+        dat[i]=Math.floor(80*bright);dat[i+1]=Math.floor(70*bright);dat[i+2]=Math.floor(30*bright);
+      }
+      dat[i+3]=255;
+    }
+  }
+}
+
+// ── MINIMAP ────────────────────────────────────────────────────────
+function drawMinimap(){
+  let sc=96/MW;
+  MX.fillStyle='rgba(0,5,0,0.92)';MX.fillRect(0,0,96,96);
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){
+    let v=MAP[y][x];
+    if(v===1){MX.fillStyle='#0a1a00';MX.fillRect(x*sc,y*sc,sc,sc);}
+    else if(v===2){MX.fillStyle='#1a1a0a';MX.fillRect(x*sc,y*sc,sc,sc);}
+    else if(v===3){let ca=cannons.find(c=>c.mx===x&&c.my===y);
+      if(ca&&ca.alive){MX.fillStyle='#4a2200';MX.fillRect(x*sc,y*sc,sc,sc);}}
+  }
+  for(let c of cannons){if(c.alive){MX.fillStyle='rgba(255,120,0,.9)';MX.beginPath();MX.arc(c.x*sc,c.y*sc,2.5,0,Math.PI*2);MX.fill();}}
+  if(phase>=3){MX.fillStyle='rgba(255,255,100,.9)';MX.beginPath();MX.arc(GATE_POS.x*sc,GATE_POS.y*sc,3,0,Math.PI*2);MX.fill();}
+  if(boss&&!boss.dead){MX.fillStyle='rgba(255,0,0,1)';MX.fillRect(boss.x*sc-3,boss.y*sc-3,6,6);}
+  for(let e of enemies){if(e.dead)continue;MX.fillStyle='rgba(180,80,0,.7)';MX.fillRect(e.x*sc-1.5,e.y*sc-1.5,3,3);}
+  MX.fillStyle='#88ff44';MX.fillRect(P.x*sc-2.5,P.y*sc-2.5,5,5);
+  MX.strokeStyle='#88ff44';MX.lineWidth=1;MX.beginPath();
+  MX.moveTo(P.x*sc,P.y*sc);MX.lineTo(P.x*sc+Math.cos(P.ang)*8,P.y*sc+Math.sin(P.ang)*8);MX.stroke();
+}
+
+// ── AI ─────────────────────────────────────────────────────────────
+function los(x1,y1,x2,y2){
+  let dx=x2-x1,dy=y2-y1,steps=Math.hypot(dx,dy)*14;
+  for(let i=1;i<steps;i++){let tt=i/steps;if(wallAt(x1+dx*tt,y1+dy*tt))return false;}
+  return true;
+}
+function updateAI(e,spd,view){
+  if(e.dead)return;
+  e.phase+=.03;
+  let dx=P.x-e.x,dy=P.y-e.y,d=Math.hypot(dx,dy);
+  let see=d<view&&los(e.x,e.y,P.x,P.y);
+  if(see){e.state='chase';e.alertT=280;}
+  else if(e.alertT>0){e.alertT--;if(e.alertT===0)e.state='idle';}
+  if(e.state==='chase'&&d>.4){
+    let tx=e.x+dx/d*spd,ty=e.y+dy/d*spd;
+    if(!wallAt(tx,e.y))e.x=tx;if(!wallAt(e.x,ty))e.y=ty;
+  }else if(e.state==='idle'){
+    e._wt--;if(e._wt<=0){e.ang=Math.random()*Math.PI*2;e._wt=60+Math.random()*140;}
+    let tx=e.x+Math.cos(e.ang)*.01,ty=e.y+Math.sin(e.ang)*.01;
+    if(!wallAt(tx,e.y))e.x=tx;if(!wallAt(e.x,ty))e.y=ty;
+  }
+  let ar=e.isBoss?.85:.55;
+  if(d<ar){
+    P.hp-=e.isBoss?.55:.28;
+    document.getElementById('hp-fill').style.width=Math.max(0,P.hp)+'%';
+    flashDmg();if(P.hp<=0)triggerDeath();
+  }
+}
+function updateEnemies(){
+  for(let e of enemies)updateAI(e,.015,8);
+  if(boss&&!boss.dead)updateAI(boss,.023,14);
+  growlT--;
+  if(growlT<=0){
+    growlT=160+Math.random()*280;
+    let near=enemies.filter(e=>!e.dead&&Math.hypot(e.x-P.x,e.y-P.y)<6);
+    if(near.length>0){tone(100+Math.random()*40,'sawtooth',.4,.12);tone(55,'sine',.3,.08);}
+  }
+  birdT--;
+  if(birdT<=0){birdT=300+Math.random()*600;if(Math.random()>.5)playBirdScreech();}
+}
+
+// ── PLAYER ────────────────────────────────────────────────────────
+function updatePlayer(){
+  let spd=.048;
+  let fw=keys['KeyW']||keys['ArrowUp'],bk=keys['KeyS']||keys['ArrowDown'];
+  let lt=keys['KeyA'],rt=keys['KeyD'],moved=false;
+  let ox=0,oy=0;
+  if(fw){ox+=Math.cos(P.ang)*spd;oy+=Math.sin(P.ang)*spd;moved=true;}
+  if(bk){ox-=Math.cos(P.ang)*spd*.7;oy-=Math.sin(P.ang)*spd*.7;moved=true;}
+  if(lt){ox+=Math.cos(P.ang-Math.PI/2)*spd*.7;oy+=Math.sin(P.ang-Math.PI/2)*spd*.7;moved=true;}
+  if(rt){ox+=Math.cos(P.ang+Math.PI/2)*spd*.7;oy+=Math.sin(P.ang+Math.PI/2)*spd*.7;moved=true;}
+  if(keys['ArrowLeft'])P.ang-=.025;if(keys['ArrowRight'])P.ang+=.025;
+  let pad=.28;
+  if(ox){let nx=P.x+ox;if(!wallAt(nx+Math.sign(ox)*pad,P.y)&&!wallAt(nx+Math.sign(ox)*pad,P.y+.2)&&!wallAt(nx+Math.sign(ox)*pad,P.y-.2))P.x=nx;}
+  if(oy){let ny=P.y+oy;if(!wallAt(P.x,ny+Math.sign(oy)*pad)&&!wallAt(P.x+.2,ny+Math.sign(oy)*pad)&&!wallAt(P.x-.2,ny+Math.sign(oy)*pad))P.y=ny;}
+  if(moved){footT++;if(footT%30===0)playStep();}
+  if(recoil>0)recoil=Math.max(0,recoil-.045);
+  if(shotCD>0)shotCD--;
+  if(reloading){reloadTick++;if(reloadTick>=130){reloading=false;P.ammo=30;document.getElementById('ammo-n').textContent='30';floatMsg('');}}
+  updateObjHUD();checkPhase();
+}
+
+// ── GUN ──────────────────────────────────────────────────────────
+function drawGun(){
+  GX.clearRect(0,0,900,240);
+  let mov=keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD'];
+  let bob=Math.sin(t*.11)*(mov?5:1.5);
+  let sway=Math.sin(t*.07)*(mov?3:.8);
+  let rc=recoil*60;
+  let cx=450+sway,cy=168+bob+rc;
+  // Rifle (longer than pistol)
+  GX.fillStyle='#2a1a08';GX.fillRect(cx-8,cy,16,75); // grip
+  GX.fillStyle='#1a0e04';GX.fillRect(cx-10,cy-10,20,20); // trigger guard
+  GX.fillStyle='#111';GX.fillRect(cx-12,cy-15,24,16); // body
+  GX.fillStyle='#0a0a0a';GX.fillRect(cx-5,cy-80,10,68); // barrel long
+  GX.fillStyle='#1a1a1a';GX.fillRect(cx-6,cy-16,12,4); // bolt
+  GX.fillStyle='#2a2a2a';GX.fillRect(cx+5,cy-55,8,4); // ejection port
+  GX.fillStyle='#333';GX.fillRect(cx-1,cy-84,2,8); // sight
+  GX.fillStyle='#222';GX.fillRect(cx-8,cy-18,5,3); // scope base
+  GX.fillStyle='#1a1008';
+  for(let i=0;i<4;i++)GX.fillRect(cx-7+i*4,cy+4,3,10); // grip texture
+  if(reloading){
+    GX.save();GX.translate(cx,cy+30);GX.rotate(Math.sin(reloadTick*.08)*.4);
+    GX.fillStyle='#1a0e04';GX.fillRect(-8,-30,16,60);GX.restore();
+  }
+  if(recoil>.3){
+    let fr=recoil*16;
+    let grd=GX.createRadialGradient(cx,cy-86,0,cx,cy-86,fr*2);
+    grd.addColorStop(0,`rgba(255,240,120,${recoil})`);
+    grd.addColorStop(.4,`rgba(255,120,0,${recoil*.7})`);
+    grd.addColorStop(1,'rgba(200,50,0,0)');
+    GX.fillStyle=grd;GX.beginPath();GX.arc(cx,cy-86,fr*2,0,Math.PI*2);GX.fill();
+    for(let i=0;i<6;i++){GX.fillStyle=`rgba(255,200,50,${recoil*.7})`;GX.fillRect(cx+(Math.random()-.5)*fr*4,cy-86+(Math.random()-.5)*fr*3,2,2);}
+  }
+  document.getElementById('reloadbar').style.width=reloading?Math.floor(reloadTick/130*90)+'px':'0';
+}
+
+// ── END ──────────────────────────────────────────────────────────
+function triggerDeath(){
+  if(gameOver||won)return;
+  running=false;gameOver=true;
+  if(pointerLocked)document.exitPointerLock();
+  let el=Math.floor((Date.now()-P.startTime)/1000);
+  let m=Math.floor(el/60),s=el%60;
+  document.getElementById('go-stats').innerHTML=
+    `Inimigos eliminados: ${P.kills}<br>Fase alcançada: ${phase+1} de 4<br>Tempo: ${m}m ${s}s`;
+  document.getElementById('goscreen').style.display='flex';
+}
+function triggerWin(){
+  if(won)return;running=false;won=true;
+  if(pointerLocked)document.exitPointerLock();
+  playVictory();
+  let el=Math.floor((Date.now()-P.startTime)/1000);
+  let m=Math.floor(el/60),s=el%60;
+  document.getElementById('win-stats').innerHTML=
+    `Inimigos eliminados: ${P.kills}<br>Canhões destruídos: ${cannons.length}<br>Tempo de fuga: ${m}m ${s}s`;
+  document.getElementById('winscreen').style.display='flex';
+}
+
+// ── LOOP ─────────────────────────────────────────────────────────
+function loop(){
+  requestAnimationFrame(loop);
+  if(!running)return;
+  t++;
+  updatePlayer();updateEnemies();
+  renderScene();drawGun();drawMinimap();
+}
+loop();
+</script>
+</body>
+</html>
